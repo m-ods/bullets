@@ -38,93 +38,105 @@ const shortMonthNames = [
   "Dec",
 ];
 
-function formatDate(date, format, includeDay) {
-  const day = date.getDate();
-  const month = date.getMonth();
-  const year = date.getFullYear();
-  const dayOfWeek = date.getDay();
-
-  if (format === "numeric") {
-    return includeDay
-      ? `${dayNames[dayOfWeek]}, ${day}/${month + 1}/${year}`
-      : `${day}/${month + 1}/${year}`;
+// Initialize the year dropdown
+const yearSelect = document.getElementById("year");
+const currentYear = new Date().getFullYear();
+for (let year = currentYear; year <= currentYear + 10; year++) {
+  const option = document.createElement("option");
+  option.value = year;
+  option.textContent = year;
+  if (year === currentYear) {
+    option.selected = true;
   }
-
-  let formattedDate = "";
-  if (includeDay) {
-    formattedDate +=
-      format === "long" ? dayNames[dayOfWeek] : shortDayNames[dayOfWeek];
-    formattedDate += ", ";
-  }
-
-  if (format === "long") {
-    formattedDate += `${monthNames[month]} ${day}`;
-  } else {
-    formattedDate += `${day} ${shortMonthNames[month]}`;
-  }
-
-  return formattedDate;
+  yearSelect.appendChild(option);
 }
 
+// Initialize the month dropdown
+const monthSelect = document.getElementById("month");
+const currentMonth = new Date().getMonth() + 1;
+monthSelect.value = currentMonth;
+
+// Get the settings toggle and content
+const settingsToggle = document.getElementById("settings-toggle");
+const settingsContent = document.getElementById("settings-content");
+
+// Function to toggle settings visibility
+function toggleSettings() {
+  const isExpanded = settingsToggle.getAttribute("aria-expanded") === "true";
+  settingsToggle.setAttribute("aria-expanded", !isExpanded);
+  settingsContent.classList.toggle("expanded");
+}
+
+// Initialize settings toggle state
+settingsToggle.setAttribute("aria-expanded", "false");
+
+// Function to format date based on selected format
+function formatDate(date, format) {
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const dayName = shortDayNames[date.getDay()];
+  const monthName = shortMonthNames[date.getMonth()];
+
+  const includeDay = document.getElementById("includeDay").checked;
+  const includeYear = document.getElementById("includeYear").checked;
+  const dayPrefix = includeDay ? `${dayName}, ` : "";
+  const yearSuffix = includeYear ? ` ${year}` : "";
+
+  switch (format) {
+    case "day-only":
+      return `${dayPrefix}${day}${yearSuffix}`;
+    case "short":
+      return `${dayPrefix}${day} ${monthName}${yearSuffix}`;
+    case "numeric-ddmm":
+      return `${dayPrefix}${day.toString().padStart(2, "0")}/${month.toString().padStart(2, "0")}${yearSuffix}`;
+    case "numeric-mmdd":
+      return `${dayPrefix}${month.toString().padStart(2, "0")}/${day.toString().padStart(2, "0")}${yearSuffix}`;
+    case "numeric-short":
+      return `${dayPrefix}${day}/${month}${yearSuffix}`;
+    default:
+      return `${dayPrefix}${day}${yearSuffix}`;
+  }
+}
+
+// Function to generate the journal
 function generateJournal() {
   const month = parseInt(document.getElementById("month").value);
   const year = parseInt(document.getElementById("year").value);
-  const includeDay = document.getElementById("includeDay").checked;
-  const dateFormat = document.getElementById("dateFormat").value;
+  const dateFormat = document.querySelector(
+    'input[name="dateFormat"]:checked'
+  ).value;
 
-  const firstDay = new Date(year, month - 1, 1);
-  const lastDay = new Date(year, month, 0);
+  const output = document.getElementById("output");
+  const daysInMonth = new Date(year, month, 0).getDate();
 
-  // Pre-allocate array for better performance
-  const daysInMonth = lastDay.getDate();
-  const journalLines = new Array(daysInMonth + 2); // +2 for header and extra newline
+  let journal = "";
 
-  // Set header
-  journalLines[0] = `${monthNames[month - 1]} ${year}\n\n`;
-
-  // Generate dates
-  const currentDate = new Date(firstDay);
-  for (let i = 1; i <= daysInMonth; i++) {
-    journalLines[i] = `${formatDate(currentDate, dateFormat, includeDay)}\n\n`;
-    currentDate.setDate(currentDate.getDate() + 1);
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month - 1, day);
+    journal += formatDate(date, dateFormat) + "\n\n";
   }
 
-  // Join all lines at once
-  document.getElementById("output").value = journalLines.join("");
+  output.textContent = journal;
 }
 
+// Function to copy to clipboard
 function copyToClipboard() {
-  const text = document.getElementById("output").value;
-  navigator.clipboard.writeText(text).then(() => {
-    alert("Copied to clipboard!");
+  const output = document.getElementById("output");
+  navigator.clipboard.writeText(output.textContent).then(() => {
+    const copyButton = document.getElementById("copy-btn");
+    const originalText = copyButton.innerHTML;
+    copyButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6 9 17l-5-5"/>
+      </svg>
+      Copied!
+    `;
+    setTimeout(() => {
+      copyButton.innerHTML = originalText;
+    }, 2000);
   });
 }
 
-function toggleSettings() {
-  const toggle = document.querySelector(".settings-toggle");
-  const settings = document.querySelector(".additional-settings");
-  toggle.classList.toggle("open");
-  settings.classList.toggle("open");
-}
-
-// Initialize with current month and year
-document.addEventListener("DOMContentLoaded", () => {
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
-
-  // Set current month
-  document.getElementById("month").value = currentMonth;
-
-  // Populate year dropdown (current year and next 5 years)
-  const yearSelect = document.getElementById("year");
-  for (let year = currentYear; year <= currentYear + 5; year++) {
-    const option = document.createElement("option");
-    option.value = year;
-    option.textContent = year;
-    yearSelect.appendChild(option);
-  }
-  yearSelect.value = currentYear;
-
-  generateJournal();
-});
+// Generate initial journal
+generateJournal();
