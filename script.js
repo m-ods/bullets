@@ -64,11 +64,23 @@ const settingsContent = document.getElementById("settings-content");
 function toggleSettings() {
   const isExpanded = settingsToggle.getAttribute("aria-expanded") === "true";
   settingsToggle.setAttribute("aria-expanded", !isExpanded);
+
+  // Add transition class
   settingsContent.classList.toggle("expanded");
+
+  // Ensure focus management and accessibility
+  if (!isExpanded) {
+    // When opening, move focus to the first interactive element
+    setTimeout(() => {
+      const firstInput = settingsContent.querySelector("input");
+      if (firstInput) firstInput.focus();
+    }, 300); // Match the transition duration
+  }
 }
 
 // Initialize settings toggle state
 settingsToggle.setAttribute("aria-expanded", "false");
+settingsContent.style.visibility = "visible"; // Ensure content is visible for animation
 
 // Function to format date based on selected format
 function formatDate(date, format) {

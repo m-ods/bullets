@@ -141,7 +141,7 @@ body {
 
 .chevron-icon {
   margin-right: 0.25rem;
-  transition: transform 0.2s;
+  transition: transform 0.3s ease;
 }
 
 .collapsible-trigger[aria-expanded="true"] .chevron-icon {
@@ -149,12 +149,19 @@ body {
 }
 
 .collapsible-content {
-  padding-top: 1rem;
-  display: none;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 0.5s ease-in-out,
+    opacity 0.5s ease-in-out,
+    padding-top 0.5s ease-in-out;
 }
 
 .collapsible-content.expanded {
-  display: block;
+  max-height: 500px; /* Large enough to fit content */
+  opacity: 1;
+  padding-top: 1rem;
 }
 
 .setting-option {
